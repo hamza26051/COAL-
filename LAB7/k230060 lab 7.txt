@@ -1,0 +1,325 @@
+QUESTION 1
+
+
+Include Irvine32.inc
+
+.data
+    arr WORD 10, 20, 30, 40, 50, 60, 70, 80, 90, 100  ; Source array
+    arrSize = LENGTHOF arr                            ; Number of elements
+    new_arr WORD arrSize DUP(?)                       ; Destination array
+    
+.code
+main PROC
+    mov ecx, arrSize  
+    mov esi, 0        
+
+    PushLoop:
+        movzx eax, arr[esi * 2] 
+        push eax                 ; Push onto stack
+        inc esi
+        loop PushLoop
+
+    mov ecx, arrSize
+    mov esi, 0
+
+    PopLoop:
+        pop eax                     ; Pop DWORD from stack
+        mov new_arr[esi * 2], ax    ; Store WORD into new_arr
+        inc esi
+        loop PopLoop
+
+    ; Print new_arr
+    mov ecx, arrSize  
+    mov esi, 0         
+
+    PrintLoop:
+        movzx eax, new_arr[esi * 2] 
+        call WriteDec                
+        mov eax, 32    
+        call WriteChar        
+        inc esi
+        loop PrintLoop
+
+    call crlf
+
+    exit
+
+main endp
+end main
+
+
+
+
+
+QUESTION 2
+
+
+Include Irvine32.inc
+
+.data
+    num1 DWORD 10
+    num2 DWORD 20
+    num3 DWORD 30
+    result DWORD ?
+    
+.code
+main PROC
+    push num1
+    push num2
+    push num3
+
+    pop eax        ; Get num3
+    pop ebx        ; Get num2
+    add eax, ebx   ; eax = num3 + num2
+
+    pop ecx        ; Get num1
+    add eax, ecx   ; eax = (num3 + num2) + num1
+
+    mov result, eax 
+
+    mov eax, result
+    call WriteDec   
+
+    exit
+
+main endp
+end main
+	
+
+
+
+
+Q3)
+.386
+.model flat, stdcall
+option casemap :none
+
+include \masm32\include\windows.inc
+include \masm32\include\kernel32.inc
+include \masm32\include\masm32.inc
+includelib \masm32\lib\kernel32.lib
+includelib \masm32\lib\masm32.lib
+
+.data
+    array1 DWORD 10, 20, 30, 40, 50             ; First array with 5 elements
+    array2 DWORD 5, 15, 25, 35, 45              ; Second array with 5 elements
+    sum1   DWORD ?                               ; Sum of first array
+    sum2   DWORD ?                               ; Sum of second array
+    totalSum DWORD ?                             ; Total sum of both arrays
+    
+    msg1 BYTE "Sum of Array 1: ", 0
+    msg2 BYTE "Sum of Array 2: ", 0
+    msg3 BYTE "Total Sum: ", 0
+    buffer BYTE 16 dup(0)
+    
+.code
+start:
+    ; Calculate sum of first array
+    invoke SumArray1
+    
+    ; Calculate sum of second array
+    invoke SumArray2
+    
+    ; Calculate total sum
+    invoke AddSums
+    
+    ; Display results
+    invoke dwtoa, sum1, addr buffer
+    invoke StdOut, addr msg1
+    invoke StdOut, addr buffer
+    invoke StdOut, addr byte ptr 13, 10
+    
+    invoke dwtoa, sum2, addr buffer
+    invoke StdOut, addr msg2
+    invoke StdOut, addr buffer
+    invoke StdOut, addr byte ptr 13, 10
+    
+    invoke dwtoa, totalSum, addr buffer
+    invoke StdOut, addr msg3
+    invoke StdOut, addr buffer
+    invoke StdOut, addr byte ptr 13, 10
+    
+    invoke ExitProcess, 0
+
+; Procedure 1: Calculate the sum of array1
+SumArray1 PROC
+    mov ecx, 5              ; Loop counter (5 elements)
+    mov esi, 0              ; Index for array
+    mov eax, 0              ; Initialize sum to 0
+    
+sumLoop1:
+    add eax, array1[esi*4]  ; Add current element to sum
+    inc esi                 ; Move to next element
+    loop sumLoop1           ; Decrement ecx and loop if not zero
+    
+    mov sum1, eax           ; Store result in sum1
+    ret
+SumArray1 ENDP
+
+; Procedure 2: Calculate the sum of array2
+SumArray2 PROC
+    mov ecx, 5              ; Loop counter (5 elements)
+    mov esi, 0              ; Index for array
+    mov eax, 0              ; Initialize sum to 0
+    
+sumLoop2:
+    add eax, array2[esi*4]  ; Add current element to sum
+    inc esi                 ; Move to next element
+    loop sumLoop2           ; Decrement ecx and loop if not zero
+    
+    mov sum2, eax           ; Store result in sum2
+    ret
+SumArray2 ENDP
+
+; Procedure 3: Add the sums of both arrays
+AddSums PROC
+    mov eax, sum1           ; Load sum1 into eax
+    add eax, sum2           ; Add sum2 to eax
+    mov totalSum, eax       ; Store result in totalSum
+    ret
+AddSums ENDP
+
+END start
+
+Q4)
+
+.386
+.model flat, stdcall
+option casemap:none
+
+include \masm32\include\windows.inc
+include \masm32\include\kernel32.inc
+includelib \masm32\lib\kernel32.lib
+
+.data
+    asterisk BYTE "*", 0
+    newline BYTE 0Dh, 0Ah, 0  ; Carriage return + line feed
+
+.code
+start:
+    ; Call the function to print the pattern with 5 rows
+    push 5                   ; Pass the number of rows to the function
+    call PrintPattern
+    add esp, 4               ; Clean up the stack
+
+    ; Exit the program
+    invoke ExitProcess, 0
+
+; Function to print the pattern
+; Parameter: Number of rows (passed on the stack)
+PrintPattern PROC
+    push ebp
+    mov ebp, esp
+    push ebx
+    push ecx
+    push edx
+    
+    mov ecx, [ebp+8]        ; Get the number of rows from parameter
+    mov ebx, 1              ; Initialize row counter
+    
+row_loop:
+    push ecx                ; Save outer loop counter
+    
+    mov ecx, ebx            ; Set inner loop counter to current row number
+    
+    ; Loop to print asterisks for current row
+col_loop:
+    ; Print an asterisk
+    push ecx                ; Save inner loop counter
+    invoke StdOut, addr asterisk
+    pop ecx                 ; Restore inner loop counter
+    
+    loop col_loop           ; Continue until all asterisks for row are printed
+    
+    ; Print a newline after each row
+    invoke StdOut, addr newline
+    
+    pop ecx                 ; Restore outer loop counter
+    inc ebx                 ; Increment row counter
+    loop row_loop           ; Continue until all rows are printed
+    
+    pop edx
+    pop ecx
+    pop ebx
+    pop ebp
+    ret
+PrintPattern ENDP
+
+END start
+
+Q5)
+.386
+.model flat, stdcall
+option casemap:none
+
+include \masm32\include\windows.inc
+include \masm32\include\kernel32.inc
+include \masm32\include\masm32.inc
+includelib \masm32\lib\kernel32.lib
+includelib \masm32\lib\masm32.lib
+
+.data
+    promptMsg BYTE "Enter an integer number (n): ", 0
+    resultMsg BYTE "Sum of numbers from 1 to n: ", 0
+    buffer BYTE 16 dup(0)
+    n DWORD ?
+    sum DWORD ?
+
+.code
+start:
+    ; Display prompt to user
+    invoke StdOut, addr promptMsg
+    
+    ; Get user input
+    invoke StdIn, addr buffer, sizeof buffer
+    
+    ; Convert input string to integer
+    invoke atodw, addr buffer
+    mov n, eax
+    
+    ; Call function to calculate sum
+    push n
+    call SumOneToN
+    add esp, 4          ; Clean up stack
+    mov sum, eax        ; Save result
+    
+    ; Display result
+    invoke StdOut, addr resultMsg
+    invoke dwtoa, sum, addr buffer
+    invoke StdOut, addr buffer
+    invoke StdOut, addr byte ptr 13, 10
+    
+    ; Exit program
+    invoke ExitProcess, 0
+
+; Function to calculate sum of numbers from 1 to n
+; Parameter: n (passed on stack)
+; Returns: sum in EAX
+SumOneToN PROC
+    push ebp
+    mov ebp, esp
+    push ebx
+    push ecx
+    
+    mov ecx, [ebp+8]    ; Get n from stack
+    mov eax, 0          ; Initialize sum to 0
+    mov ebx, 1          ; Start from 1
+    
+    ; Check if n is 0 or negative
+    cmp ecx, 0
+    jle end_sum
+    
+sum_loop:
+    add eax, ebx        ; Add current number to sum
+    inc ebx             ; Go to next number
+    cmp ebx, ecx        ; Compare with n
+    jle sum_loop        ; Continue if not exceeded n
+    
+end_sum:
+    pop ecx
+    pop ebx
+    pop ebp
+    ret
+SumOneToN ENDP
+
+END start
